@@ -5,7 +5,6 @@ function buildVoteGraph(votes: number, totalVotes: number): string {
     const percent = totalVotes === 0 ? 0 : votes / totalVotes;
     const percentText = (percent * 100).toFixed(0);
     
-    // Färgad progress bar med gröna och vita block
     const width = 10;
     const filled = Math.round(percent * width);
     const bar = "🟩".repeat(filled) + "⬜".repeat(width - filled);
@@ -26,22 +25,27 @@ export function createPollBlocks(
     poll: IPoll,
     showVoteButtons: boolean = true
 ): void {
-    // Header
+    // Tydlig header med titel
     block.addSectionBlock({
-        text: block.newMarkdownTextObject("📊  **" + poll.question + "**"),
+        text: block.newMarkdownTextObject("🗳️  **OMRÖSTNING**"),
+    });
+    
+    // Frågan
+    block.addSectionBlock({
+        text: block.newMarkdownTextObject("\n" + poll.question),
     });
 
     // Info-rad
     const infoItems: string[] = [];
     infoItems.push(poll.singleChoice ? "Enkel röst" : "Flerval");
     if (poll.confidential) {
-        infoItems.push("Anonym");
+        infoItems.push("🔒 Anonym");
     }
     if (poll.finished) {
-        infoItems.push("Avslutad ✓");
+        infoItems.push("✅ Avslutad");
     } else if (poll.expiresAt) {
         const expiresDate = new Date(poll.expiresAt);
-        infoItems.push("Stänger " + expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }));
+        infoItems.push("⏰ Stänger " + expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }));
     }
     
     block.addContextBlock({
@@ -93,11 +97,11 @@ export function createPollBlocks(
 
     block.addDividerBlock();
 
-    // Footer med person-emoji
+    // Footer
     block.addContextBlock({
         elements: [
             block.newMarkdownTextObject(
-                poll.totalVotes + " röster · 👤 @" + poll.username
+                "📊 " + poll.totalVotes + " röster · 👤 @" + poll.username
             ),
         ],
     });

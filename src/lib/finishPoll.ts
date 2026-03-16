@@ -45,7 +45,7 @@ export async function finishPoll(
                     updater.setRoom(room);
                     
                     const block = modify.getCreator().getBlockBuilder();
-                    createPollBlocks(block, poll, false);
+                    createPollBlocks(block, poll, true);
                     updater.setBlocks(block);
                     
                     await modify.getUpdater().finish(updater);
