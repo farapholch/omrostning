@@ -33,7 +33,7 @@ jobs:
         run: npx tsc
 
       - name: Package app
-        run: rc-apps package
+        run: rc-apps package --experimental-native-compiler
 
       - name: Get version
         id: version
