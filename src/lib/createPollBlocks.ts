@@ -17,14 +17,14 @@ function buildVotersList(voters: { name: string }[], confidential: boolean): str
         return "";
     }
     const names = voters.map((v) => v.name).join(", ");
-    return "\n_" + names + "_";
+    return "  _" + names + "_";
 }
 
 function getRankEmoji(rank: number): string {
     if (rank === 1) return "🥇";
     if (rank === 2) return "🥈";
     if (rank === 3) return "🥉";
-    return "　"; // Empty space for alignment
+    return "";
 }
 
 export function createPollBlocks(
@@ -82,20 +82,14 @@ export function createPollBlocks(
         const votes = voteData?.quantity || 0;
         
         let prefix = "";
-        if (poll.finished && poll.totalVotes > 0) {
+        if (poll.finished && poll.totalVotes > 0 && rankings[index] <= 3) {
             prefix = getRankEmoji(rankings[index]) + " ";
         }
         
-        let optionText = prefix + "**" + option + "**";
-        
-        if (shouldShowResults) {
-            optionText += "\n" + buildVoteGraph(votes, poll.totalVotes) + " (" + votes + ")";
-            optionText += buildVotersList(voteData?.voters || [], poll.confidential);
-        }
-
+        // Alternativnamn med knapp
         if (showVoteButtons && !poll.finished) {
             block.addSectionBlock({
-                text: block.newMarkdownTextObject(optionText),
+                text: block.newMarkdownTextObject(prefix + "**" + option + "**"),
                 accessory: block.newButtonElement({
                     text: block.newPlainTextObject("Rösta"),
                     actionId: "vote_" + index,
@@ -104,7 +98,17 @@ export function createPollBlocks(
             });
         } else {
             block.addSectionBlock({
-                text: block.newMarkdownTextObject(optionText),
+                text: block.newMarkdownTextObject(prefix + "**" + option + "**"),
+            });
+        }
+        
+        // Progress bar under alternativet
+        if (shouldShowResults) {
+            const progressText = buildVoteGraph(votes, poll.totalVotes) + " (" + votes + ")" + buildVotersList(voteData?.voters || [], poll.confidential);
+            block.addContextBlock({
+                elements: [
+                    block.newMarkdownTextObject(progressText),
+                ],
             });
         }
     });
