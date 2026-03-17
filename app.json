@@ -11,7 +11,7 @@
     "name": "Omröstning",
     "nameSlug": "omrostning",
     "classFile": "OmrostningApp.ts",
-    "description": "Skapa omröstningar i Snacka med enkel- eller flerval, anonymitet och tidsgränser",
+    "description": "Matterpoll-inspired polling app with real-time updates, single or multiple choice, and time limits",
     "implements": [],
     "permissions": [
         {

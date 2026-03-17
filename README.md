@@ -1,75 +1,167 @@
-# Omrostning - Rocket.Chat Poll App
+# Omröstning - Rocket.Chat Poll App
 
-En svensk omröstnings-app för Rocket.Chat med realtids-uppdateringar.
+[English](#english) | [Svenska](#svenska)
 
-## Features
+---
 
-- Enkel röst (ett val) eller flerval
-- Valbar anonymitet (🔒)
-- Tidsgräns med auto-stängning (⏰)
-- Ändra/ta bort röst (toggle)
-- Realtids progress bars (🟩⬜)
-- Öppna igen avslutad omröstning (ägare)
-- Ranking-emoji vid avslut (🥇🥈🥉)
+## English
 
-## Design
+A Matterpoll-inspired polling app for Rocket.Chat with real-time updates.
 
-**Pågående omröstning:**
+### Features
+
+- **Matterpoll-style layout** - All options as buttons on one row
+- Single choice or multiple choice voting
+- Time limit with auto-close (⏰)
+- Edit poll - creator can modify question/options (✏️)
+- Remove vote - clear your vote (🗑️)
+- Real-time progress bars (🟩⬜)
+- Reopen finished polls (owner only)
+- Ranking emojis on completion (🥇🥈🥉)
+
+### Layout
+
+**Active poll:**
 ```
-🗳️  OMRÖSTNING
+### What should we have for lunch?
 
-Vad ska vi äta till lunch?
-
-🔒 Anonym · ⏰ Stänger 15:30
+[Pizza] [Sushi] [Tacos]
 ────────────────────────
-Pizza
-🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜  40% (2)  [Rösta]
+**Pizza**  🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% (2)
+**Sushi**  🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% (3)
 
-Sushi
-🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜  60% (3)  [Rösta]
-────────────────────────
-📊 5 röster · 👤 @pelle
-
-[Avsluta omröstning]
-```
-
-**Avslutad omröstning:**
-```
-🗳️  OMRÖSTNING
-
-Vad ska vi äta till lunch?
-
-✅ Avslutad
-────────────────────────
-🥈 Pizza
-🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜  40% (2)
-
-🥇 Sushi
-🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜  60% (3)
-────────────────────────
-📊 5 röster · 👤 @pelle
-
-[Öppna igen]
+Total: 5 votes
+[🗑️ Remove vote] [✏️ Edit] [End]
 ```
 
-## Installation
+**Finished poll:**
+```
+### What should we have for lunch?  ✅
+────────────────────────
+🥇 **Sushi**  🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% (3)
+🥈 **Pizza**  🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% (2)
 
-### Från GitHub Releases (rekommenderat)
-1. Gå till [Releases](https://github.com/farapholch/omrostning/releases)
-2. Ladda ner senaste `omrostning_x.x.x.zip`
-3. I Rocket.Chat: Admin → Marketplace → Private Apps → Upload App
-4. Välj zip-filen och installera
+Total: 5 votes
+[Reopen]
+```
 
-### Manuell build
+### Installation
+
+#### From GitHub Releases (recommended)
+1. Go to [Releases](https://github.com/farapholch/omrostning/releases)
+2. Download the latest `omrostning_x.x.x.zip`
+3. In Rocket.Chat: Admin → Marketplace → Private Apps → Upload App
+4. Select the zip file and install
+
+#### Manual build
 ```bash
 npm install
 npx tsc
 rc-apps package --experimental-native-compiler
 ```
 
-## Användning
+### Usage
 
-### Skapa omröstning (modal)
+#### Create poll (modal)
+```
+/omrostning
+```
+Opens a form to configure:
+- Question
+- Options (2-10)
+- Vote type (single/multiple)
+- Show results (always/after end)
+- Time limit (none/5min/15min/30min/1h/2h/24h)
+
+#### Quick command
+```
+/omrostning Question? | Option 1 | Option 2 | Option 3
+/omrostning What to eat? Pizza, Sushi, Tacos
+```
+
+#### Alias
+```
+/rost
+```
+
+### Voting
+
+- Click an **option button** to vote
+- Click again to **remove** your vote
+- Single choice: automatically switches to new option
+
+### Release
+
+New versions are built automatically via GitHub Actions when a tag is pushed:
+
+```bash
+# Update version in app.json, then:
+git add -A && git commit -m v1.x.x: description
+git tag v1.x.x
+git push && git push origin v1.x.x
+```
+
+---
+
+## Svenska
+
+En Matterpoll-inspirerad omröstnings-app för Rocket.Chat med realtids-uppdateringar.
+
+### Funktioner
+
+- **Matterpoll-liknande layout** - Alla alternativ som knappar på en rad
+- Enkel röst eller flerval
+- Tidsgräns med auto-stängning (⏰)
+- Redigera omröstning - skaparen kan ändra fråga/alternativ (✏️)
+- Ta bort röst - nollställ din röst (🗑️)
+- Realtids progress bars (🟩⬜)
+- Öppna igen avslutad omröstning (ägare)
+- Ranking-emoji vid avslut (🥇🥈🥉)
+
+### Layout
+
+**Pågående omröstning:**
+```
+### Vad ska vi äta till lunch?
+
+[Pizza] [Sushi] [Tacos]
+────────────────────────
+**Pizza**  🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% (2)
+**Sushi**  🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% (3)
+
+Total: 5 röster
+[🗑️ Ta bort röst] [✏️ Redigera] [Avsluta]
+```
+
+**Avslutad omröstning:**
+```
+### Vad ska vi äta till lunch?  ✅
+────────────────────────
+🥇 **Sushi**  🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% (3)
+🥈 **Pizza**  🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% (2)
+
+Total: 5 röster
+[Öppna igen]
+```
+
+### Installation
+
+#### Från GitHub Releases (rekommenderat)
+1. Gå till [Releases](https://github.com/farapholch/omrostning/releases)
+2. Ladda ner senaste `omrostning_x.x.x.zip`
+3. I Rocket.Chat: Admin → Marketplace → Private Apps → Upload App
+4. Välj zip-filen och installera
+
+#### Manuell build
+```bash
+npm install
+npx tsc
+rc-apps package --experimental-native-compiler
+```
+
+### Användning
+
+#### Skapa omröstning (modal)
 ```
 /omrostning
 ```
@@ -77,37 +169,39 @@ rc-apps package --experimental-native-compiler
 - Fråga
 - Alternativ (2-10 st)
 - Röstningstyp (enkel/flerval)
-- Anonymitet (öppen/anonym)
 - Visa resultat (alltid/efter avslut)
 - Tidsgräns (ingen/5min/15min/30min/1h/2h/24h)
 
-### Alias
+#### Kortkommando
+```
+/omrostning Fråga? | Alt 1 | Alt 2 | Alt 3
+/omrostning Vad ska vi äta? Pizza, Sushi, Tacos
+```
+
+#### Alias
 ```
 /rost
 ```
 
-## Röstning
+### Röstning
 
-- Klicka **Rösta** för att rösta på ett alternativ
-- Klicka igen för att **ångra** din röst
+- Klicka på en **alternativknapp** för att rösta
+- Klicka igen för att **ta bort** din röst
 - Vid enkel röst: byter automatiskt till nytt alternativ
 
-## Anonymitet
-
-- **Öppen:** Visar namn på de som röstat under varje alternativ
-- **Anonym (🔒):** Visar endast antal röster, inga namn
-
-## Release
+### Release
 
 Nya versioner byggs automatiskt via GitHub Actions när en tag pushas:
 
 ```bash
 # Uppdatera version i app.json, sedan:
-git add -A && git commit -m "v1.4.0: beskrivning"
-git tag v1.4.0
-git push && git push origin v1.4.0
+git add -A && git commit -m v1.x.x: beskrivning
+git tag v1.x.x
+git push && git push origin v1.x.x
 ```
 
-## Licens
+---
+
+## License / Licens
 
 MIT - Team Våffla
