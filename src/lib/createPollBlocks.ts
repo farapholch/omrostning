@@ -1,7 +1,7 @@
 import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit";
 import { IPoll } from "../definition";
 
-function buildVoteGraph(votes: number, totalVotes: number): string {
+function buildVoteBar(votes: number, totalVotes: number): string {
     const percent = totalVotes === 0 ? 0 : votes / totalVotes;
     const percentText = (percent * 100).toFixed(0);
     
@@ -10,14 +10,6 @@ function buildVoteGraph(votes: number, totalVotes: number): string {
     const bar = "🟩".repeat(filled) + "⬜".repeat(width - filled);
     
     return bar + " " + percentText + "%";
-}
-
-function buildVotersList(voters: { name: string }[], confidential: boolean): string {
-    if (confidential || voters.length === 0) {
-        return "";
-    }
-    const names = voters.map((v) => v.name).join(", ");
-    return "\n_" + names + "_";
 }
 
 function getRankEmoji(rank: number): string {
@@ -33,31 +25,20 @@ export function createPollBlocks(
     showVoteButtons: boolean = true
 ): void {
     // Header med frågan
-    block.addSectionBlock({
-        text: block.newMarkdownTextObject("📊 **" + poll.question + "**"),
-    });
-
-    // Info-rad
-    const infoItems: string[] = [];
-    if (poll.confidential) {
-        infoItems.push("🔒 Anonym");
-    }
-    if (poll.finished) {
-        infoItems.push("✅ Avslutad");
-    } else if (poll.expiresAt) {
+    let headerText = "### " + poll.question;
+    const metaItems: string[] = [];
+    if (poll.finished) metaItems.push("✅");
+    else if (poll.expiresAt) {
         const expiresDate = new Date(poll.expiresAt);
-        infoItems.push("⏰ " + expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }));
+        metaItems.push("⏰ " + expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }));
     }
-    
-    if (infoItems.length > 0) {
-        block.addContextBlock({
-            elements: [
-                block.newMarkdownTextObject(infoItems.join(" · ")),
-            ],
-        });
+    if (metaItems.length > 0) {
+        headerText += "  " + metaItems.join(" ");
     }
 
-    block.addDividerBlock();
+    block.addSectionBlock({
+        text: block.newMarkdownTextObject(headerText),
+    });
 
     const shouldShowResults = poll.showResults || poll.finished;
 
@@ -71,74 +52,104 @@ export function createPollBlocks(
         });
     }
 
-    // Alternativ med röst-knappar
-    poll.options.forEach((option, index) => {
-        const voteData = poll.votes[index];
-        const votes = voteData?.quantity || 0;
-        
-        let prefix = "";
-        if (poll.finished && poll.totalVotes > 0 && rankings[index] <= 3) {
-            prefix = getRankEmoji(rankings[index]);
-        }
-        
-        // Bygg alternativtext
-        let optionText = prefix + "**" + option + "**";
-        if (shouldShowResults) {
-            optionText += "\n" + buildVoteGraph(votes, poll.totalVotes) + " (" + votes + ")";
-            optionText += buildVotersList(voteData?.voters || [], poll.confidential);
-        }
-        
-        block.addSectionBlock({
-            text: block.newMarkdownTextObject(optionText),
+    // Alla röstningsknappar på EN rad (endast om inte avslutad)
+    if (showVoteButtons && !poll.finished) {
+        const buttons = poll.options.map((option, index) => {
+            return block.newButtonElement({
+                text: block.newPlainTextObject(option),
+                actionId: "vote_" + index,
+                value: poll.id + "|" + index,
+            });
         });
         
-        // Rösta-knapp under varje alternativ (om inte avslutad)
-        if (showVoteButtons && !poll.finished) {
-            block.addActionsBlock({
-                elements: [
-                    block.newButtonElement({
-                        text: block.newPlainTextObject("Rösta på " + option),
-                        actionId: "vote_" + index,
-                        value: poll.id + "|" + index,
-                    }),
-                ],
-            });
+        block.addActionsBlock({
+            elements: buttons,
+        });
+        
+        // Linje endast efter knappar, innan resultat
+        if (shouldShowResults && poll.totalVotes > 0) {
+            block.addDividerBlock();
         }
-    });
+    } else if (poll.finished) {
+        // Avslutad - linje mellan fråga och resultat
+        block.addDividerBlock();
+    }
 
-    block.addDividerBlock();
+    // Visa resultat
+    if (shouldShowResults && poll.totalVotes > 0) {
+        let resultsText = "";
+        poll.options.forEach((option, index) => {
+            const voteData = poll.votes[index];
+            const votes = voteData?.quantity || 0;
+            
+            let prefix = "";
+            if (poll.finished && rankings[index] <= 3) {
+                prefix = getRankEmoji(rankings[index]);
+            }
+            
+            resultsText += prefix + "**" + option + "**  " + buildVoteBar(votes, poll.totalVotes) + " (" + votes + ")\n";
+        });
+        
+        block.addSectionBlock({
+            text: block.newMarkdownTextObject(resultsText.trim()),
+        });
+    } else if (poll.finished && poll.totalVotes === 0) {
+        let resultsText = "";
+        poll.options.forEach((option) => {
+            resultsText += "**" + option + "**  " + buildVoteBar(0, 0) + " (0)\n";
+        });
+        block.addSectionBlock({
+            text: block.newMarkdownTextObject(resultsText.trim()),
+        });
+    }
 
     // Footer
     block.addContextBlock({
         elements: [
-            block.newMarkdownTextObject(
-                "📊 " + poll.totalVotes + " röster · 👤 @" + poll.username
-            ),
+            block.newMarkdownTextObject("Total: " + poll.totalVotes + " röster"),
         ],
     });
 
-    // Avsluta/Öppna igen knapp
+    // Kontrollknappar
     if (showVoteButtons) {
+        const controlButtons = [];
+        
         if (!poll.finished) {
-            block.addActionsBlock({
-                elements: [
-                    block.newButtonElement({
-                        text: block.newPlainTextObject("Avsluta omröstning"),
-                        actionId: "finish_poll",
-                        value: poll.id,
-                    }),
-                ],
-            });
+            controlButtons.push(
+                block.newButtonElement({
+                    text: block.newPlainTextObject("🗑️ Ta bort röst"),
+                    actionId: "clear_vote",
+                    value: poll.id,
+                })
+            );
+            
+            controlButtons.push(
+                block.newButtonElement({
+                    text: block.newPlainTextObject("✏️ Redigera"),
+                    actionId: "edit_poll",
+                    value: poll.id,
+                })
+            );
+            
+            controlButtons.push(
+                block.newButtonElement({
+                    text: block.newPlainTextObject("Avsluta"),
+                    actionId: "finish_poll",
+                    value: poll.id,
+                })
+            );
         } else {
-            block.addActionsBlock({
-                elements: [
-                    block.newButtonElement({
-                        text: block.newPlainTextObject("Öppna igen"),
-                        actionId: "reopen_poll",
-                        value: poll.id,
-                    }),
-                ],
-            });
+            controlButtons.push(
+                block.newButtonElement({
+                    text: block.newPlainTextObject("Öppna igen"),
+                    actionId: "reopen_poll",
+                    value: poll.id,
+                })
+            );
         }
+        
+        block.addActionsBlock({
+            elements: controlButtons,
+        });
     }
 }

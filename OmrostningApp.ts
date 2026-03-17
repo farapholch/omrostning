@@ -23,6 +23,9 @@ import { votePoll } from "./src/lib/votePoll";
 import { finishPoll } from "./src/lib/finishPoll";
 import { reopenPoll } from "./src/lib/reopenPoll";
 import { getPoll } from "./src/lib/getPoll";
+import { editPollModal } from "./src/lib/editPollModal";
+import { clearVote } from "./src/lib/clearVote";
+import { updatePoll } from "./src/lib/updatePoll";
 import { IPollCreateData } from "./src/definition";
 
 export class OmrostningApp extends App {
@@ -55,12 +58,45 @@ export class OmrostningApp extends App {
     ): Promise<IUIKitResponse> {
         const data = context.getInteractionData();
         const viewId = data.view.id;
+        const user = data.user;
+        const state = data.view.state as Record<string, Record<string, string>>;
 
+        // Hantera redigering av poll
+        if (viewId.startsWith("edit_poll_modal---")) {
+            const pollId = viewId.replace("edit_poll_modal---", "");
+            
+            const newQuestion = state?.edit_question?.question?.trim();
+            if (!newQuestion) {
+                return context.getInteractionResponder().viewErrorResponse({
+                    viewId,
+                    errors: { question: "Du måste ange en fråga." },
+                });
+            }
+
+            const newOptions: string[] = [];
+            for (let i = 0; i < 10; i++) {
+                const opt = state?.["edit_option_" + i]?.["option_" + i]?.trim();
+                if (opt) {
+                    newOptions.push(opt);
+                }
+            }
+
+            if (newOptions.length < 2) {
+                return context.getInteractionResponder().viewErrorResponse({
+                    viewId,
+                    errors: { option_0: "Du måste ha minst 2 alternativ." },
+                });
+            }
+
+            await updatePoll(read, modify, persistence, pollId, newQuestion, newOptions, user);
+            return { success: true };
+        }
+
+        // Hantera skapande av ny poll
         if (!viewId.startsWith("create_poll_modal---")) {
             return { success: true };
         }
 
-        const user = data.user;
         const roomId = viewId.replace("create_poll_modal---", "");
 
         if (!roomId) {
@@ -69,8 +105,6 @@ export class OmrostningApp extends App {
                 errors: { question: "Kunde inte hitta rummet." },
             });
         }
-
-        const state = data.view.state as Record<string, Record<string, string>>;
 
         const question = state?.poll_question?.question?.trim();
         if (!question) {
@@ -145,6 +179,7 @@ export class OmrostningApp extends App {
         const data = context.getInteractionData();
         const actionId = data.actionId;
         const user = data.user;
+        const triggerId = data.triggerId;
 
         if (actionId.startsWith("vote_")) {
             const value = data.value || "";
@@ -152,8 +187,21 @@ export class OmrostningApp extends App {
             if (parts.length === 2) {
                 const pollId = parts[0];
                 const voteIndex = parseInt(parts[1], 10);
-
                 await votePoll(read, modify, persistence, pollId, voteIndex, user);
+            }
+        }
+
+        if (actionId === "clear_vote") {
+            const pollId = data.value || "";
+            await clearVote(read, modify, persistence, pollId, user);
+        }
+
+        if (actionId === "edit_poll") {
+            const pollId = data.value || "";
+            const poll = await getPoll(read.getPersistenceReader(), pollId);
+            
+            if (poll && poll.uid === user.id && !poll.finished && triggerId) {
+                await editPollModal(modify, user, poll, triggerId);
             }
         }
 

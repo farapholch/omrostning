@@ -75,27 +75,6 @@ export async function createPollModal(
         }),
     });
 
-    // Anonymitet
-    block.addInputBlock({
-        blockId: "poll_confidential",
-        label: block.newPlainTextObject("Anonymitet"),
-        element: block.newStaticSelectElement({
-            actionId: "confidential",
-            placeholder: block.newPlainTextObject("Välj anonymitet"),
-            initialValue: "open",
-            options: [
-                {
-                    text: block.newPlainTextObject("Öppen (visa namn)"),
-                    value: "open",
-                },
-                {
-                    text: block.newPlainTextObject("Anonym (dölj namn)"),
-                    value: "anonymous",
-                },
-            ],
-        }),
-    });
-
     // Visa resultat
     block.addInputBlock({
         blockId: "poll_show_results",
@@ -137,7 +116,6 @@ export async function createPollModal(
         }),
     });
 
-    // Inkludera roomId i modal-ID:t
     await modify.getUiController().openModalView(
         {
             id: "create_poll_modal---" + room.id,
