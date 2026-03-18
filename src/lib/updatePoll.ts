@@ -37,6 +37,9 @@ export async function updatePoll(
     // Uppdatera frågan
     poll.question = newQuestion;
     
+    // Kolla om röstningstypen ändras
+    const voteTypeChanged = singleChoice !== undefined && poll.singleChoice !== singleChoice;
+    
     // Uppdatera inställningar om de skickades
     if (singleChoice !== undefined) {
         poll.singleChoice = singleChoice;
@@ -51,26 +54,33 @@ export async function updatePoll(
         }
     }
 
-    // Hantera alternativ - behåll röster för oförändrade alternativ
+    // Hantera alternativ - behåll röster for oförändrade alternativ
     const updatedVotes: IVoteOption[] = [];
     
-    newOptions.forEach((newOpt, newIndex) => {
-        // Kolla om detta alternativ fanns innan
-        const oldIndex = poll.options.findIndex(old => old === newOpt);
-        if (oldIndex !== -1 && poll.votes[oldIndex]) {
-            // Behåll röster
-            updatedVotes.push(poll.votes[oldIndex]);
-        } else {
-            // Nytt alternativ utan röster
+    // Om röstningstypen andrades, rensa alla röster
+    if (voteTypeChanged) {
+        newOptions.forEach(() => {
             updatedVotes.push({ quantity: 0, voters: [] });
-        }
-    });
+        });
+        poll.totalVotes = 0;
+    } else {
+        newOptions.forEach((newOpt, newIndex) => {
+            // Kolla om detta alternativ fanns innan
+            const oldIndex = poll.options.findIndex(old => old === newOpt);
+            if (oldIndex !== -1 && poll.votes[oldIndex]) {
+                // Behåll röster
+                updatedVotes.push(poll.votes[oldIndex]);
+            } else {
+                // Nytt alternativ utan röster
+                updatedVotes.push({ quantity: 0, voters: [] });
+            }
+        });
+        // Räkna om totalVotes
+        poll.totalVotes = updatedVotes.reduce((sum, v) => sum + v.quantity, 0);
+    }
 
     poll.options = newOptions;
     poll.votes = updatedVotes;
-    
-    // Räkna om totalVotes
-    poll.totalVotes = updatedVotes.reduce((sum, v) => sum + v.quantity, 0);
 
     await storePoll(persistence, poll);
 

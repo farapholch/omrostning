@@ -15,7 +15,7 @@ import {
     UIKitBlockInteractionContext,
     UIKitViewSubmitInteractionContext,
 } from "@rocket.chat/apps-engine/definition/uikit";
-import { OmrostningCommand, RostCommand } from "./src/commands/OmrostningCommand";
+import { OmrostningCommand, RostCommand, PollCommand } from "./src/commands/OmrostningCommand";
 import { PollTimeoutProcessor } from "./src/processors/PollTimeoutProcessor";
 import { createPollMessage } from "./src/lib/createPollMessage";
 import { schedulePollClose } from "./src/lib/schedulePollClose";
@@ -43,6 +43,9 @@ export class OmrostningApp extends App {
         );
         await configurationExtend.slashCommands.provideSlashCommand(
             new RostCommand()
+        );
+        await configurationExtend.slashCommands.provideSlashCommand(
+            new PollCommand()
         );
 
         await configurationExtend.scheduler.registerProcessors([

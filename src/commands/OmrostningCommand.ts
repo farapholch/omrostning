@@ -25,7 +25,23 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
         .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035'']/g, "'");
     
-    // Metod 1: Parse med citattecken "Fråga?" "Alt1" "Alt2"
+    // Metod 1: Parse med 'Fråga' "svar1" "svar2" format
+    const singleQuoteMatch = normalized.match(/^'([^']+)'/);
+    if (singleQuoteMatch) {
+        const question = singleQuoteMatch[1].trim();
+        const rest = normalized.slice(singleQuoteMatch[0].length);
+        const optionRegex = /"([^"]+)"/g;
+        const options: string[] = [];
+        let optMatch;
+        while ((optMatch = optionRegex.exec(rest)) !== null) {
+            options.push(optMatch[1].trim());
+        }
+        if (options.length >= 2) {
+            return { question, options };
+        }
+    }
+
+    // Metod 2: Parse med citattecken "Fråga?" "Alt1" "Alt2"
     const quoteRegex = /"([^"]+)"/g;
     const quoteMatches: string[] = [];
     let match;
@@ -40,7 +56,7 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         };
     }
     
-    // Metod 2: Pipe-separator: Fråga? | Alt1 | Alt2
+    // Metod 3: Pipe-separator: Fråga? | Alt1 | Alt2
     if (normalized.includes("|")) {
         const parts = normalized.split("|").map(p => p.trim()).filter(p => p.length > 0);
         if (parts.length >= 3) {
@@ -51,7 +67,7 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 3: Komma-separator efter frågetecken: Vad tycker du? Ja, Nej
+    // Metod 4: Komma-separator efter frågetecken: Vad tycker du? Ja, Nej
     const qMatch = normalized.match(/^(.+\?)\s*(.+)$/);
     if (qMatch) {
         const question = qMatch[1].trim();
@@ -67,7 +83,7 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
 }
 
 export class OmrostningCommand implements ISlashCommand {
-    public command: string = "omrostning";
+    public command: string = "omröstning";
     public i18nParamsExample: string = "Fråga? | Alt1 | Alt2";
     public i18nDescription: string = "Skapa en omröstning";
     public providesPreview: boolean = false;
@@ -128,6 +144,48 @@ export class RostCommand implements ISlashCommand {
     public command: string = "rost";
     public i18nParamsExample: string = "Fråga? | Alt1 | Alt2";
     public i18nDescription: string = "Skapa en omröstning";
+    public providesPreview: boolean = false;
+
+    public async executor(
+        context: SlashCommandContext,
+        read: IRead,
+        modify: IModify,
+        http: IHttp,
+        persis: IPersistence
+    ): Promise<void> {
+        const triggerId = context.getTriggerId();
+        const user = context.getSender();
+        const room = context.getRoom();
+        const argsArray = context.getArguments();
+
+        if (argsArray.length > 0) {
+            const parsed = parseArguments(argsArray);
+            
+            if (parsed) {
+                const pollData: IPollCreateData = {
+                    question: parsed.question,
+                    options: parsed.options,
+                    singleChoice: true,
+                    confidential: false,
+                    showResults: true,
+                    timeLimit: undefined,
+                };
+
+                await createPollMessage(modify, persis, room, user, pollData);
+                return;
+            }
+        }
+
+        if (triggerId) {
+            await createPollModal(modify, user, room, triggerId);
+        }
+    }
+}
+
+export class PollCommand implements ISlashCommand {
+    public command: string = "poll";
+    public i18nParamsExample: string = "Question? | Option1 | Option2";
+    public i18nDescription: string = "Create a poll";
     public providesPreview: boolean = false;
 
     public async executor(
