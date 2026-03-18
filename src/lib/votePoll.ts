@@ -8,6 +8,7 @@ import { createVoter } from "../definition";
 import { getPoll } from "./getPoll";
 import { storePoll } from "./storePoll";
 import { createPollBlocks } from "./createPollBlocks";
+import { Language } from "./i18n";
 
 export async function votePoll(
     read: IRead,
@@ -15,7 +16,8 @@ export async function votePoll(
     persistence: IPersistence,
     pollId: string,
     voteIndex: number,
-    user: IUser
+    user: IUser,
+    lang: Language = "en"
 ): Promise<{ success: boolean; message?: string }> {
     const poll = await getPoll(read.getPersistenceReader(), pollId);
     

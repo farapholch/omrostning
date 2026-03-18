@@ -29,13 +29,20 @@ import { createPollModal } from "./src/lib/createPollModal";
 import { clearVote } from "./src/lib/clearVote";
 import { updatePoll } from "./src/lib/updatePoll";
 import { IPollCreateData } from "./src/definition";
+import { Language } from "./src/lib/i18n";
 
 export class OmrostningApp extends App {
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
         super(info, logger, accessors);
     }
 
-    public async initialize(
+    
+    public async getLanguage(read: IRead): Promise<Language> {
+        const setting = await read.getEnvironmentReader().getSettings().getValueById("language");
+        return (setting === "sv" ? "sv" : "en") as Language;
+    }
+
+public async initialize(
         configurationExtend: IConfigurationExtend,
         environmentRead: IEnvironmentRead
     ): Promise<void> {
@@ -115,7 +122,8 @@ export class OmrostningApp extends App {
             const timeLimitStr = state?.edit_poll_time_limit?.time_limit;
             const timeLimit = timeLimitStr ? parseInt(timeLimitStr, 10) : undefined;
 
-            await updatePoll(read, modify, persistence, pollId, newQuestion, newOptions, user, singleChoice, timeLimit);
+            const editLang = await this.getLanguage(read);
+            await updatePoll(read, modify, persistence, pollId, newQuestion, newOptions, user, singleChoice, timeLimit, editLang);
             return { success: true };
         }
 
@@ -180,12 +188,14 @@ export class OmrostningApp extends App {
             });
         }
 
+        const lang = await this.getLanguage(read);
         const pollId = await createPollMessage(
             modify,
             persistence,
             room,
             user,
-            pollData
+            pollData,
+            lang
         );
 
         if (pollData.timeLimit && pollData.timeLimit > 0) {
@@ -220,7 +230,8 @@ export class OmrostningApp extends App {
             if (roomId) {
                 const room = await read.getRoomReader().getById(roomId);
                 if (room) {
-                    await createPollModal(modify, user, room, triggerId, newOptionCount);
+                    const modalLang = await this.getLanguage(read);
+                    await createPollModal(modify, user, room, triggerId, newOptionCount, modalLang);
                 }
             }
             return { success: true };
@@ -237,7 +248,8 @@ export class OmrostningApp extends App {
             if (roomId) {
                 const room = await read.getRoomReader().getById(roomId);
                 if (room) {
-                    await createPollModal(modify, user, room, triggerId, newOptionCount);
+                    const modalLang = await this.getLanguage(read);
+                    await createPollModal(modify, user, room, triggerId, newOptionCount, modalLang);
                 }
             }
             return { success: true };
@@ -249,13 +261,15 @@ export class OmrostningApp extends App {
             if (parts.length === 2) {
                 const pollId = parts[0];
                 const voteIndex = parseInt(parts[1], 10);
-                await votePoll(read, modify, persistence, pollId, voteIndex, user);
+                const voteLang = await this.getLanguage(read);
+                await votePoll(read, modify, persistence, pollId, voteIndex, user, voteLang);
             }
         }
 
         if (actionId === "clear_vote") {
             const pollId = data.value || "";
-            await clearVote(read, modify, persistence, pollId, user);
+            const clearLang = await this.getLanguage(read);
+            await clearVote(read, modify, persistence, pollId, user, clearLang);
         }
 
         
@@ -268,7 +282,8 @@ export class OmrostningApp extends App {
             
             const poll = await getPoll(read.getPersistenceReader(), pollId);
             if (poll && poll.uid === user.id) {
-                await editPollModal(modify, user, poll, triggerId, newOptionCount);
+                const editModalLang = await this.getLanguage(read);
+                await editPollModal(modify, user, poll, triggerId, newOptionCount, editModalLang);
             }
             return { success: true };
         }
@@ -282,7 +297,8 @@ export class OmrostningApp extends App {
             
             const poll = await getPoll(read.getPersistenceReader(), pollId);
             if (poll && poll.uid === user.id) {
-                await editPollModal(modify, user, poll, triggerId, newOptionCount);
+                const editModalLang = await this.getLanguage(read);
+                await editPollModal(modify, user, poll, triggerId, newOptionCount, editModalLang);
             }
             return { success: true };
         }
@@ -292,18 +308,21 @@ export class OmrostningApp extends App {
             const poll = await getPoll(read.getPersistenceReader(), pollId);
             
             if (poll && poll.uid === user.id && !poll.finished && triggerId) {
-                await editPollModal(modify, user, poll, triggerId);
+                const editLang2 = await this.getLanguage(read);
+                await editPollModal(modify, user, poll, triggerId, undefined, editLang2);
             }
         }
 
         if (actionId === "finish_poll") {
             const pollId = data.value || "";
-            await finishPoll(read, modify, persistence, pollId, user);
+            const finishLang = await this.getLanguage(read);
+            await finishPoll(read, modify, persistence, pollId, user, finishLang);
         }
 
         if (actionId === "reopen_poll") {
             const pollId = data.value || "";
-            await reopenPoll(read, modify, persistence, pollId, user);
+            const reopenLang = await this.getLanguage(read);
+            await reopenPoll(read, modify, persistence, pollId, user, reopenLang);
         }
 
         return { success: true };

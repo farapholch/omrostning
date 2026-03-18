@@ -7,13 +7,15 @@ import { IUser } from "@rocket.chat/apps-engine/definition/users";
 import { getPoll } from "./getPoll";
 import { storePoll } from "./storePoll";
 import { createPollBlocks } from "./createPollBlocks";
+import { Language } from "./i18n";
 
 export async function reopenPoll(
     read: IRead,
     modify: IModify,
     persistence: IPersistence,
     pollId: string,
-    user: IUser
+    user: IUser,
+    lang: Language = "en"
 ): Promise<{ success: boolean; message?: string }> {
     const poll = await getPoll(read.getPersistenceReader(), pollId);
     
@@ -45,7 +47,7 @@ export async function reopenPoll(
                     updater.setRoom(room);
                     
                     const block = modify.getCreator().getBlockBuilder();
-                    createPollBlocks(block, poll, true);
+                    createPollBlocks(block, poll, true, lang);
                     updater.setBlocks(block);
                     
                     await modify.getUpdater().finish(updater);

@@ -1,14 +1,13 @@
 import { BlockBuilder } from "@rocket.chat/apps-engine/definition/uikit";
 import { IPoll } from "../definition";
+import { t, Language } from "./i18n";
 
 function buildVoteBar(votes: number, totalVotes: number): string {
     const percent = totalVotes === 0 ? 0 : votes / totalVotes;
     const percentText = (percent * 100).toFixed(0);
-    
     const width = 10;
     const filled = Math.round(percent * width);
     const bar = "🟩".repeat(filled) + "⬜".repeat(width - filled);
-    
     return bar + " " + percentText + "%";
 }
 
@@ -22,15 +21,16 @@ function getRankEmoji(rank: number): string {
 export function createPollBlocks(
     block: BlockBuilder,
     poll: IPoll,
-    showVoteButtons: boolean = true
+    showVoteButtons: boolean = true,
+    lang: Language = "en"
 ): void {
-    // Header med frågan
     let headerText = "### " + poll.question;
     const metaItems: string[] = [];
     if (poll.finished) metaItems.push("✅");
     else if (poll.expiresAt) {
         const expiresDate = new Date(poll.expiresAt);
-        metaItems.push("⏰ Stänger " + expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Stockholm" }));
+        const timeStr = expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Stockholm" });
+        metaItems.push(t("poll_ends_at", lang, { time: timeStr }));
     }
     if (metaItems.length > 0) {
         headerText += "  " + metaItems.join(" ");
@@ -42,7 +42,6 @@ export function createPollBlocks(
 
     const shouldShowResults = poll.showResults || poll.finished;
 
-    // Beräkna ranking för avslutade polls
     let rankings: number[] = [];
     if (poll.finished && poll.totalVotes > 0) {
         const sortedVotes = [...poll.votes.map(v => v.quantity)].sort((a, b) => b - a);
@@ -52,7 +51,6 @@ export function createPollBlocks(
         });
     }
 
-    // Alla röstningsknappar på EN rad (endast om inte avslutad)
     if (showVoteButtons && !poll.finished) {
         const buttons = poll.options.map((option, index) => {
             return block.newButtonElement({
@@ -61,35 +59,25 @@ export function createPollBlocks(
                 value: poll.id + "|" + index,
             });
         });
-        
-        block.addActionsBlock({
-            elements: buttons,
-        });
-        
-        // Linje endast efter knappar, innan resultat
+        block.addActionsBlock({ elements: buttons });
         if (shouldShowResults && poll.totalVotes > 0) {
             block.addDividerBlock();
         }
     } else if (poll.finished) {
-        // Avslutad - linje mellan fråga och resultat
         block.addDividerBlock();
     }
 
-    // Visa resultat
     if (shouldShowResults && poll.totalVotes > 0) {
         let resultsText = "";
         poll.options.forEach((option, index) => {
             const voteData = poll.votes[index];
             const votes = voteData?.quantity || 0;
-            
             let prefix = "";
             if (poll.finished && rankings[index] <= 3) {
                 prefix = getRankEmoji(rankings[index]);
             }
-            
             resultsText += prefix + "**" + option + "**  " + buildVoteBar(votes, poll.totalVotes) + " (" + votes + ")\n";
         });
-        
         block.addSectionBlock({
             text: block.newMarkdownTextObject(resultsText.trim()),
         });
@@ -103,37 +91,33 @@ export function createPollBlocks(
         });
     }
 
-    // Footer
+    const totalText = poll.totalVotes === 1 
+        ? t("poll_total_votes_one", lang)
+        : t("poll_total_votes", lang, { count: poll.totalVotes });
     block.addContextBlock({
-        elements: [
-            block.newMarkdownTextObject("Total: " + poll.totalVotes + " röster"),
-        ],
+        elements: [block.newMarkdownTextObject(totalText)],
     });
 
-    // Kontrollknappar
     if (showVoteButtons) {
         const controlButtons = [];
-        
         if (!poll.finished) {
             controlButtons.push(
                 block.newButtonElement({
-                    text: block.newPlainTextObject("🗑️ Ta bort röst"),
+                    text: block.newPlainTextObject("🗑️ " + t("button_remove_vote", lang)),
                     actionId: "clear_vote",
                     value: poll.id,
                 })
             );
-            
             controlButtons.push(
                 block.newButtonElement({
-                    text: block.newPlainTextObject("✏️ Redigera"),
+                    text: block.newPlainTextObject("✏️ " + t("button_edit", lang)),
                     actionId: "edit_poll",
                     value: poll.id,
                 })
             );
-            
             controlButtons.push(
                 block.newButtonElement({
-                    text: block.newPlainTextObject("Avsluta"),
+                    text: block.newPlainTextObject(t("button_end", lang)),
                     actionId: "finish_poll",
                     value: poll.id,
                 })
@@ -141,15 +125,12 @@ export function createPollBlocks(
         } else {
             controlButtons.push(
                 block.newButtonElement({
-                    text: block.newPlainTextObject("Öppna igen"),
+                    text: block.newPlainTextObject(t("button_reopen", lang)),
                     actionId: "reopen_poll",
                     value: poll.id,
                 })
             );
         }
-        
-        block.addActionsBlock({
-            elements: controlButtons,
-        });
+        block.addActionsBlock({ elements: controlButtons });
     }
 }

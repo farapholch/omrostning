@@ -7,6 +7,7 @@ import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
 import { IUser } from "@rocket.chat/apps-engine/definition/users";
 import { IPoll, IPollCreateData, IVoteOption } from "../definition";
 import { createPollBlocks } from "./createPollBlocks";
+import { Language } from "./i18n";
 import { storePoll } from "./storePoll";
 
 function generatePollId(): string {
@@ -18,7 +19,8 @@ export async function createPollMessage(
     persistence: IPersistence,
     room: IRoom,
     user: IUser,
-    data: IPollCreateData
+    data: IPollCreateData,
+    lang: Language = "en"
 ): Promise<string> {
     const pollId = generatePollId();
     
@@ -55,7 +57,7 @@ export async function createPollMessage(
     builder.setSender(user);
     
     const block = modify.getCreator().getBlockBuilder();
-    createPollBlocks(block, poll, true);
+    createPollBlocks(block, poll, true, lang);
     builder.setBlocks(block);
     
     const msgId = await modify.getCreator().finish(builder);

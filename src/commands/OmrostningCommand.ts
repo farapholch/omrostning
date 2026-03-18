@@ -9,6 +9,7 @@ import {
     IPersistence,
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { createPollModal } from "../lib/createPollModal";
+import { t, Language } from "../lib/i18n";
 import { createPollMessage } from "../lib/createPollMessage";
 import { IPollCreateData } from "../definition";
 

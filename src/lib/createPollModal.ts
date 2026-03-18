@@ -3,23 +3,25 @@ import {
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { IUser } from "@rocket.chat/apps-engine/definition/users";
 import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
+import { t, Language } from "./i18n";
 
 export async function createPollModal(
     modify: IModify,
     user: IUser,
     room: IRoom,
     triggerId: string,
-    optionCount: number = 2
+    optionCount: number = 2,
+    lang: Language = "en"
 ): Promise<void> {
     const block = modify.getCreator().getBlockBuilder();
 
     // Fråga
     block.addInputBlock({
         blockId: "poll_question",
-        label: block.newPlainTextObject("Fråga"),
+        label: block.newPlainTextObject(t("modal_question_label", lang)),
         element: block.newPlainTextInputElement({
             actionId: "question",
-            placeholder: block.newPlainTextObject("Vad vill du fråga?"),
+            placeholder: block.newPlainTextObject(t("modal_question_placeholder", lang)),
         }),
     });
 
@@ -30,10 +32,9 @@ export async function createPollModal(
         block.addInputBlock({
             blockId: "poll_option_" + i,
             optional: !isRequired,
-            label: block.newPlainTextObject("Alternativ " + i),
+            label: block.newPlainTextObject(t("modal_option_label", lang) + " " + i),
             element: block.newPlainTextInputElement({
                 actionId: "option_" + i,
-                placeholder: block.newPlainTextObject(i <= 2 ? (i === 1 ? "Första alternativet" : "Andra alternativet") : "Ytterligare alternativ"),
             }),
         });
     }
@@ -45,7 +46,7 @@ export async function createPollModal(
         actionButtons.push(
             block.newButtonElement({
                 actionId: "add_option",
-                text: block.newPlainTextObject("+ Lägg till"),
+                text: block.newPlainTextObject(t("modal_add_option", lang)),
                 value: String(optionCount + 1),
             })
         );
@@ -55,7 +56,7 @@ export async function createPollModal(
         actionButtons.push(
             block.newButtonElement({
                 actionId: "remove_option",
-                text: block.newPlainTextObject("- Ta bort"),
+                text: block.newPlainTextObject(t("modal_remove_option", lang)),
                 value: String(optionCount - 1),
             })
         );
@@ -74,18 +75,17 @@ export async function createPollModal(
     // Röstningstyp
     block.addInputBlock({
         blockId: "poll_type",
-        label: block.newPlainTextObject("Röstningstyp"),
+        label: block.newPlainTextObject(t("modal_vote_type_label", lang)),
         element: block.newStaticSelectElement({
             actionId: "vote_type",
-            placeholder: block.newPlainTextObject("Välj typ"),
             initialValue: "single",
             options: [
                 {
-                    text: block.newPlainTextObject("Enkel röst (ett val)"),
+                    text: block.newPlainTextObject(t("modal_vote_type_single", lang)),
                     value: "single",
                 },
                 {
-                    text: block.newPlainTextObject("Flerval (flera val)"),
+                    text: block.newPlainTextObject(t("modal_vote_type_multiple", lang)),
                     value: "multiple",
                 },
             ],
@@ -95,19 +95,18 @@ export async function createPollModal(
     // Tidsgräns
     block.addInputBlock({
         blockId: "poll_time_limit",
-        label: block.newPlainTextObject("Tidsgräns"),
+        label: block.newPlainTextObject(t("modal_time_limit_label", lang)),
         element: block.newStaticSelectElement({
             actionId: "time_limit",
-            placeholder: block.newPlainTextObject("Välj tidsgräns"),
             initialValue: "0",
             options: [
-                { text: block.newPlainTextObject("Ingen"), value: "0" },
-                { text: block.newPlainTextObject("5 minuter"), value: "5" },
-                { text: block.newPlainTextObject("15 minuter"), value: "15" },
-                { text: block.newPlainTextObject("30 minuter"), value: "30" },
-                { text: block.newPlainTextObject("1 timme"), value: "60" },
-                { text: block.newPlainTextObject("2 timmar"), value: "120" },
-                { text: block.newPlainTextObject("24 timmar"), value: "1440" },
+                { text: block.newPlainTextObject(t("modal_time_limit_none", lang)), value: "0" },
+                { text: block.newPlainTextObject(t("time_5min", lang)), value: "5" },
+                { text: block.newPlainTextObject(t("time_15min", lang)), value: "15" },
+                { text: block.newPlainTextObject(t("time_30min", lang)), value: "30" },
+                { text: block.newPlainTextObject(t("time_1h", lang)), value: "60" },
+                { text: block.newPlainTextObject(t("time_2h", lang)), value: "120" },
+                { text: block.newPlainTextObject(t("time_24h", lang)), value: "1440" },
             ],
         }),
     });
@@ -115,12 +114,12 @@ export async function createPollModal(
     await modify.getUiController().openModalView(
         {
             id: "create_poll_modal---" + room.id + "---" + optionCount,
-            title: block.newPlainTextObject("Skapa omröstning"),
+            title: block.newPlainTextObject(t("modal_title", lang)),
             close: block.newButtonElement({
-                text: block.newPlainTextObject("Avbryt"),
+                text: block.newPlainTextObject(lang === "sv" ? "Avbryt" : "Cancel"),
             }),
             submit: block.newButtonElement({
-                text: block.newPlainTextObject("Skapa"),
+                text: block.newPlainTextObject(t("modal_submit", lang)),
             }),
             blocks: block.getBlocks(),
         },

@@ -8,6 +8,7 @@ import { IPoll, IVoteOption } from "../definition";
 import { getPoll } from "./getPoll";
 import { storePoll } from "./storePoll";
 import { createPollBlocks } from "./createPollBlocks";
+import { Language } from "./i18n";
 
 export async function updatePoll(
     read: IRead,
@@ -18,7 +19,8 @@ export async function updatePoll(
     newOptions: string[],
     user: IUser,
     singleChoice?: boolean,
-    timeLimit?: number
+    timeLimit?: number,
+    lang: Language = "en"
 ): Promise<{ success: boolean; message?: string }> {
     const poll = await getPoll(read.getPersistenceReader(), pollId);
     
@@ -97,7 +99,7 @@ export async function updatePoll(
                     updater.setRoom(room);
                     
                     const block = modify.getCreator().getBlockBuilder();
-                    createPollBlocks(block, poll, true);
+                    createPollBlocks(block, poll, true, lang);
                     updater.setBlocks(block);
                     
                     await modify.getUpdater().finish(updater);
