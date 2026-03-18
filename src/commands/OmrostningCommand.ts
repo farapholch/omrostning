@@ -21,15 +21,12 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
     
     // Normalisera citattecken
     let normalized = args
-        .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
-        .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035'']/g, "'");
+        .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, "\"")
+        .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
     
     // Metod 1: Fråga med eller utan citat, alternativ med citat
-    // Exempel: Vilket djur är bäst? "katt" "hund"
-    // Exempel: "Vilket djur är bäst?" "katt" "hund"
-    const firstQuoteIndex = normalized.indexOf('"');
+    const firstQuoteIndex = normalized.indexOf("\"");
     if (firstQuoteIndex >= 0) {
-        // Hitta alla citerade strängar
         const quoteRegex = /"([^"]+)"/g;
         const allQuoted: string[] = [];
         let match;
@@ -38,7 +35,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
         
         if (firstQuoteIndex === 0) {
-            // Frågan är också citerad - första är fragan, resten är alternativ
             if (allQuoted.length >= 3) {
                 return {
                     question: allQuoted[0],
@@ -46,7 +42,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
                 };
             }
         } else {
-            // Frågan är inte citerad - allt före första citatet är fragan
             const question = normalized.slice(0, firstQuoteIndex).trim();
             if (question.length > 0 && allQuoted.length >= 2) {
                 return { question, options: allQuoted };
@@ -54,7 +49,7 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 2: Pipe-separator: Fråga? | Alt1 | Alt2
+    // Metod 2: Pipe-separator
     if (normalized.includes("|")) {
         const parts = normalized.split("|").map(p => p.trim()).filter(p => p.length > 0);
         if (parts.length >= 3) {
@@ -65,7 +60,7 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 3: Komma-separator efter frågetecken: Vad tycker du? Ja, Nej
+    // Metod 3: Komma-separator efter frågetecken
     const qMatch = normalized.match(/^(.+\?)\s*(.+)$/);
     if (qMatch) {
         const question = qMatch[1].trim();
@@ -76,12 +71,37 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
+    // Metod 4: Rocket.Chat har tagit bort citattecken - 3+ argument
+    if (argsArray.length >= 3) {
+        let questionEndIndex = -1;
+        for (let i = 0; i < argsArray.length - 2; i++) {
+            if (argsArray[i].endsWith("?")) {
+                questionEndIndex = i;
+                break;
+            }
+        }
+        
+        if (questionEndIndex >= 0) {
+            const question = argsArray.slice(0, questionEndIndex + 1).join(" ");
+            const options = argsArray.slice(questionEndIndex + 1);
+            if (options.length >= 2) {
+                return { question, options };
+            }
+        }
+        
+        // Fallback: första argumentet ar frågan, resten ar alternativ
+        return {
+            question: argsArray[0],
+            options: argsArray.slice(1),
+        };
+    }
+    
     return null;
 }
 
 export class OmrostningCommand implements ISlashCommand {
     public command: string = "omröstning";
-    public i18nParamsExample: string = "Fråga? \"Alt1\" \"Alt2\"";
+    public i18nParamsExample: string = "Fråga? Alt1 Alt2";
     public i18nDescription: string = "Skapa en omröstning";
     public providesPreview: boolean = false;
 
@@ -119,9 +139,9 @@ export class OmrostningCommand implements ISlashCommand {
                 msg.setText(
                     "Kunde inte tolka argumenten.\n\n" +
                     "**Användning:**\n" +
-                    "/omröstning Fråga? \"Alt1\" \"Alt2\"\n" +
-                    "/omröstning \"Fråga?\" \"Alt1\" \"Alt2\"\n" +
+                    "/omröstning Fråga? Alt1 Alt2\n" +
                     "/omröstning Fråga? | Alt1 | Alt2\n" +
+                    "/omröstning Fråga? Alt1, Alt2\n" +
                     "\nEller skriv bara /omröstning for formulär"
                 );
                 await modify.getNotifier().notifyUser(user, msg.getMessage());
@@ -137,7 +157,7 @@ export class OmrostningCommand implements ISlashCommand {
 
 export class RostCommand implements ISlashCommand {
     public command: string = "rost";
-    public i18nParamsExample: string = "Fråga? \"Alt1\" \"Alt2\"";
+    public i18nParamsExample: string = "Fråga? Alt1 Alt2";
     public i18nDescription: string = "Skapa en omröstning";
     public providesPreview: boolean = false;
 
@@ -179,7 +199,7 @@ export class RostCommand implements ISlashCommand {
 
 export class PollCommand implements ISlashCommand {
     public command: string = "poll";
-    public i18nParamsExample: string = "Question? \"Option1\" \"Option2\"";
+    public i18nParamsExample: string = "Question? Option1 Option2";
     public i18nDescription: string = "Create a poll";
     public providesPreview: boolean = false;
 
