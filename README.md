@@ -13,11 +13,13 @@ A Matterpoll-inspired polling app for Rocket.Chat with real-time updates.
 - **Matterpoll-style layout** - All options as buttons on one row
 - Single choice or multiple choice voting
 - Time limit with auto-close (⏰)
-- Edit poll - creator can modify question/options (✏️)
+- Edit poll - creator can modify question/options/settings (✏️)
+- Dynamic options (2-10) with add/remove buttons
 - Remove vote - clear your vote (🗑️)
 - Real-time progress bars (🟩⬜)
 - Reopen finished polls (owner only)
 - Ranking emojis on completion (🥇🥈🥉)
+- Votes cleared when changing vote type (single ↔ multiple)
 
 ### Layout
 
@@ -62,26 +64,30 @@ rc-apps package --experimental-native-compiler
 
 ### Usage
 
+#### Commands
+| Command | Description |
+|---------|-------------|
+| `/omröstning` | Main command (Swedish) |
+| `/poll` | English alias |
+| `/rost` | Short Swedish alias |
+
 #### Create poll (modal)
 ```
-/omrostning
+/omröstning
+/poll
 ```
 Opens a form to configure:
 - Question
-- Options (2-10)
+- Options (2-10, with +/- buttons)
 - Vote type (single/multiple)
 - Show results (always/after end)
 - Time limit (none/5min/15min/30min/1h/2h/24h)
 
-#### Quick command
+#### Quick commands
 ```
-/omrostning Question? | Option 1 | Option 2 | Option 3
-/omrostning What to eat? Pizza, Sushi, Tacos
-```
-
-#### Alias
-```
-/rost
+/poll Question? Option 1 Option 2 Option 3
+/poll Question? | Option 1 | Option 2 | Option 3
+/poll What to eat? Pizza, Sushi, Tacos
 ```
 
 ### Voting
@@ -112,11 +118,13 @@ En Matterpoll-inspirerad omröstnings-app för Rocket.Chat med realtids-uppdater
 - **Matterpoll-liknande layout** - Alla alternativ som knappar på en rad
 - Enkel röst eller flerval
 - Tidsgräns med auto-stängning (⏰)
-- Redigera omröstning - skaparen kan ändra fråga/alternativ (✏️)
+- Redigera omröstning - skaparen kan ändra fråga/alternativ/inställningar (✏️)
+- Dynamiska alternativ (2-10 st) med +/- knappar
 - Ta bort röst - nollställ din röst (🗑️)
 - Realtids progress bars (🟩⬜)
 - Öppna igen avslutad omröstning (ägare)
 - Ranking-emoji vid avslut (🥇🥈🥉)
+- Röster rensas vid ändring av röstningstyp (enkel ↔ flerval)
 
 ### Layout
 
@@ -161,26 +169,30 @@ rc-apps package --experimental-native-compiler
 
 ### Användning
 
+#### Kommandon
+| Kommando | Beskrivning |
+|----------|-------------|
+| `/omröstning` | Huvudkommando (svenska) |
+| `/poll` | Engelskt alias |
+| `/rost` | Kort svenskt alias |
+
 #### Skapa omröstning (modal)
 ```
-/omrostning
+/omröstning
+/poll
 ```
 Öppnar ett formulär där du kan konfigurera:
 - Fråga
-- Alternativ (2-10 st)
+- Alternativ (2-10 st, med +/- knappar)
 - Röstningstyp (enkel/flerval)
 - Visa resultat (alltid/efter avslut)
 - Tidsgräns (ingen/5min/15min/30min/1h/2h/24h)
 
-#### Kortkommando
+#### Snabbkommandon
 ```
-/omrostning Fråga? | Alt 1 | Alt 2 | Alt 3
-/omrostning Vad ska vi äta? Pizza, Sushi, Tacos
-```
-
-#### Alias
-```
-/rost
+/poll Fråga? Alt 1 Alt 2 Alt 3
+/poll Fråga? | Alt 1 | Alt 2 | Alt 3
+/poll Vad ska vi äta? Pizza, Sushi, Tacos
 ```
 
 ### Röstning
