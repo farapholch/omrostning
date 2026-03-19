@@ -11,9 +11,11 @@ const translations: Record<string, Record<string, string>> = {
         modal_vote_type_multiple: "Multiple choice",
         modal_time_limit_label: "Time Limit",
         modal_time_limit_none: "No limit",
-        modal_add_option: "+ Add",
-        modal_remove_option: "- Remove",
+        modal_option_count_label: "Number of answer options",
+        modal_add_option: "+ Add field",
+        modal_remove_option: "- Remove field",
         modal_submit: "Create",
+        modal_optional: "optional",
         modal_settings: "Settings",
         
         // Modal - Edit
@@ -43,10 +45,18 @@ const translations: Record<string, Record<string, string>> = {
         time_2h: "2 hours",
         time_24h: "24 hours",
         
+        // Anonymous
+        modal_anonymous_label: "Anonymous answer",
+        poll_anonymous: "Anonymous",
+        yes: "Yes",
+        no: "No",
+
         // Errors
         error_no_question: "You must enter a question.",
         error_min_options: "You must have at least 2 options.",
         error_room_not_found: "Could not find the room.",
+        error_only_creator: "Only the creator can do this.",
+        warning_unsaved_changes: "Note! Information in the fields above will be lost when adding/removing answer options.",
         error_parse: "Could not parse arguments.\n\n**Usage:**\n/poll Question? Option1 Option2\n/poll Question? | Option1 | Option2\n\nOr just type /poll for the form",
     },
     sv: {
@@ -60,9 +70,11 @@ const translations: Record<string, Record<string, string>> = {
         modal_vote_type_multiple: "Flerval",
         modal_time_limit_label: "Tidsgräns",
         modal_time_limit_none: "Ingen gräns",
-        modal_add_option: "+ Lägg till",
-        modal_remove_option: "- Ta bort",
+        modal_option_count_label: "Antal svarsalternativ",
+        modal_add_option: "+ Lägg till fält",
+        modal_remove_option: "- Ta bort fält",
         modal_submit: "Skapa",
+        modal_optional: "valfritt",
         modal_settings: "Inställningar",
         
         // Modal - Edit
@@ -92,10 +104,18 @@ const translations: Record<string, Record<string, string>> = {
         time_2h: "2 timmar",
         time_24h: "24 timmar",
         
+        // Anonymous
+        modal_anonymous_label: "Anonymt svar",
+        poll_anonymous: "Anonym",
+        yes: "Ja",
+        no: "Nej",
+
         // Errors
         error_no_question: "Du måste ange en fråga.",
         error_min_options: "Du måste ha minst 2 alternativ.",
         error_room_not_found: "Kunde inte hitta rummet.",
+        error_only_creator: "Endast skaparen kan göra detta.",
+        warning_unsaved_changes: "Obs! Information i fälten ovan försvinner när du lägger till/tar bort fler svars-alternativ.",
         error_parse: "Kunde inte tolka argumenten.\n\n**Användning:**\n/poll Fråga? Alt1 Alt2\n/poll Fråga? | Alt1 | Alt2\n\nEller skriv bara /poll for formulär",
     },
 };

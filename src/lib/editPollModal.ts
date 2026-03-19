@@ -12,8 +12,9 @@ export async function editPollModal(
     lang: Language = "en"
 ): Promise<void> {
     const block = modify.getCreator().getBlockBuilder();
+    const isDraft = poll.isDraft === true;
     
-    const numOptions = optionCount ?? poll.options.length;
+    const numOptions = optionCount ?? Math.max(poll.options.length, 3);
 
     // Fråga
     block.addInputBlock({
@@ -21,7 +22,7 @@ export async function editPollModal(
         label: block.newPlainTextObject(t("modal_question_label", lang)),
         element: block.newPlainTextInputElement({
             actionId: "question",
-            initialValue: poll.question,
+            initialValue: poll.question || "",
             placeholder: block.newPlainTextObject(t("modal_question_placeholder", lang)),
         }),
     });
@@ -29,10 +30,11 @@ export async function editPollModal(
     // Alternativ
     for (let i = 0; i < numOptions; i++) {
         const isRequired = i < 2;
+        const optionalText = isRequired ? "" : " (" + t("modal_optional", lang) + ")";
         block.addInputBlock({
             blockId: "edit_option_" + i,
             optional: !isRequired,
-            label: block.newPlainTextObject(t("modal_option_label", lang) + " " + (i + 1)),
+            label: block.newPlainTextObject(t("modal_option_label", lang) + " " + (i + 1) + optionalText),
             element: block.newPlainTextInputElement({
                 actionId: "option_" + i,
                 initialValue: poll.options[i] || "",
@@ -53,7 +55,7 @@ export async function editPollModal(
         );
     }
     
-    if (numOptions > poll.options.length && numOptions > 2) {
+    if (numOptions > 2) {
         actionButtons.push(
             block.newButtonElement({
                 actionId: "edit_remove_option",
@@ -64,13 +66,19 @@ export async function editPollModal(
     }
     
     if (actionButtons.length > 0) {
+        // Varning för drafts att osparade ändringar försvinner
+        if (isDraft) {
+            block.addContextBlock({
+                elements: [
+                    block.newMarkdownTextObject(t("warning_unsaved_changes", lang)),
+                ],
+            });
+        }
         block.addActionsBlock({
             blockId: "edit_option_buttons_block",
             elements: actionButtons,
         });
     }
-
-    block.addDividerBlock();
 
     // Röstningstyp
     block.addInputBlock({
@@ -112,15 +120,33 @@ export async function editPollModal(
         }),
     });
 
+    // Anonym röstning
+    block.addInputBlock({
+        blockId: "edit_poll_anonymous",
+        label: block.newPlainTextObject(t("modal_anonymous_label", lang)),
+        element: block.newStaticSelectElement({
+            actionId: "anonymous",
+            initialValue: poll.confidential ? "yes" : "no",
+            options: [
+                { text: block.newPlainTextObject(t("no", lang)), value: "no" },
+                { text: block.newPlainTextObject(t("yes", lang)), value: "yes" },
+            ],
+        }),
+    });
+
+    // Använd olika titel och submit-text för draft vs edit
+    const modalTitle = isDraft ? t("modal_title", lang) : t("edit_modal_title", lang);
+    const submitText = isDraft ? t("modal_submit", lang) : t("edit_modal_submit", lang);
+
     await modify.getUiController().openModalView(
         {
             id: "edit_poll_modal---" + poll.id + "---" + numOptions,
-            title: block.newPlainTextObject(t("edit_modal_title", lang)),
+            title: block.newPlainTextObject(modalTitle),
             close: block.newButtonElement({
                 text: block.newPlainTextObject(t("button_cancel", lang)),
             }),
             submit: block.newButtonElement({
-                text: block.newPlainTextObject(t("edit_modal_submit", lang)),
+                text: block.newPlainTextObject(submitText),
             }),
             blocks: block.getBlocks(),
         },

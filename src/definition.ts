@@ -28,6 +28,7 @@ export interface IPoll {
     timeLimit?: number;
     expiresAt?: Date;
     createdAt: Date;
+    isDraft?: boolean;
 }
 
 export interface IPollCreateData {

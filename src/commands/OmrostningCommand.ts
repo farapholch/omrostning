@@ -8,7 +8,8 @@ import {
     IHttp,
     IPersistence,
 } from "@rocket.chat/apps-engine/definition/accessors";
-import { createPollModal } from "../lib/createPollModal";
+import { editPollModal } from "../lib/editPollModal";
+import { createDraftPoll } from "../lib/draftPoll";
 import { t, Language } from "../lib/i18n";
 import { createPollMessage } from "../lib/createPollMessage";
 import { IPollCreateData } from "../definition";
@@ -20,12 +21,10 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         return null;
     }
     
-    // Normalisera citattecken
     let normalized = args
         .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, "\"")
-        .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
+        .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "\x27");
     
-    // Metod 1: Fråga med eller utan citat, alternativ med citat
     const firstQuoteIndex = normalized.indexOf("\"");
     if (firstQuoteIndex >= 0) {
         const quoteRegex = /"([^"]+)"/g;
@@ -50,7 +49,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 2: Pipe-separator
     if (normalized.includes("|")) {
         const parts = normalized.split("|").map(p => p.trim()).filter(p => p.length > 0);
         if (parts.length >= 3) {
@@ -61,7 +59,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 3: Komma-separator efter frågetecken
     const qMatch = normalized.match(/^(.+\?)\s*(.+)$/);
     if (qMatch) {
         const question = qMatch[1].trim();
@@ -72,7 +69,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
         }
     }
     
-    // Metod 4: Rocket.Chat har tagit bort citattecken - 3+ argument
     if (argsArray.length >= 3) {
         let questionEndIndex = -1;
         for (let i = 0; i < argsArray.length - 2; i++) {
@@ -90,7 +86,6 @@ function parseArguments(argsArray: string[]): { question: string; options: strin
             }
         }
         
-        // Fallback: första argumentet ar frågan, resten ar alternativ
         return {
             question: argsArray[0],
             options: argsArray.slice(1),
@@ -151,7 +146,12 @@ export class OmrostningCommand implements ISlashCommand {
         }
 
         if (triggerId) {
-            await createPollModal(modify, user, room, triggerId);
+            const langSetting = await read.getEnvironmentReader().getSettings().getValueById("language");
+            const lang: Language = langSetting === "sv" ? "sv" : "en";
+            
+            // Skapa draft och öppna edit-modal
+            const draft = await createDraftPoll(persis, room, user);
+            await editPollModal(modify, user, draft, triggerId, 3, lang);
         }
     }
 }
@@ -193,7 +193,11 @@ export class RostCommand implements ISlashCommand {
         }
 
         if (triggerId) {
-            await createPollModal(modify, user, room, triggerId);
+            const langSetting = await read.getEnvironmentReader().getSettings().getValueById("language");
+            const lang: Language = langSetting === "sv" ? "sv" : "en";
+            
+            const draft = await createDraftPoll(persis, room, user);
+            await editPollModal(modify, user, draft, triggerId, 3, lang);
         }
     }
 }
@@ -235,7 +239,11 @@ export class PollCommand implements ISlashCommand {
         }
 
         if (triggerId) {
-            await createPollModal(modify, user, room, triggerId);
+            const langSetting = await read.getEnvironmentReader().getSettings().getValueById("language");
+            const lang: Language = langSetting === "sv" ? "sv" : "en";
+            
+            const draft = await createDraftPoll(persis, room, user);
+            await editPollModal(modify, user, draft, triggerId, 3, lang);
         }
     }
 }

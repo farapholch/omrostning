@@ -1,17 +1,66 @@
 import {
     IModify,
+    IPersistence,
+    IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { IUser } from "@rocket.chat/apps-engine/definition/users";
 import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
+import { RocketChatAssociationModel, RocketChatAssociationRecord } from "@rocket.chat/apps-engine/definition/metadata";
 import { t, Language } from "./i18n";
+
+export interface IDraftPoll {
+    question: string;
+    options: string[];
+    voteType: string;
+    timeLimit: string;
+}
+
+export async function saveDraftPoll(
+    persistence: IPersistence,
+    oderId: string,
+    draft: IDraftPoll
+): Promise<void> {
+    const association = new RocketChatAssociationRecord(
+        RocketChatAssociationModel.USER,
+        "draft_poll_" + oderId
+    );
+    await persistence.updateByAssociation(association, draft, true);
+}
+
+export async function getDraftPoll(
+    read: IRead,
+    oderId: string
+): Promise<IDraftPoll | undefined> {
+    const association = new RocketChatAssociationRecord(
+        RocketChatAssociationModel.USER,
+        "draft_poll_" + oderId
+    );
+    const results = await read.getPersistenceReader().readByAssociation(association);
+    if (results && results.length > 0) {
+        return results[0] as IDraftPoll;
+    }
+    return undefined;
+}
+
+export async function deleteDraftPoll(
+    persistence: IPersistence,
+    oderId: string
+): Promise<void> {
+    const association = new RocketChatAssociationRecord(
+        RocketChatAssociationModel.USER,
+        "draft_poll_" + oderId
+    );
+    await persistence.removeByAssociation(association);
+}
 
 export async function createPollModal(
     modify: IModify,
     user: IUser,
     room: IRoom,
     triggerId: string,
+    lang: Language = "en",
     optionCount: number = 2,
-    lang: Language = "en"
+    draft?: IDraftPoll
 ): Promise<void> {
     const block = modify.getCreator().getBlockBuilder();
 
@@ -21,13 +70,13 @@ export async function createPollModal(
         label: block.newPlainTextObject(t("modal_question_label", lang)),
         element: block.newPlainTextInputElement({
             actionId: "question",
+            initialValue: draft?.question || "",
             placeholder: block.newPlainTextObject(t("modal_question_placeholder", lang)),
         }),
     });
 
     // Alternativ (dynamiskt antal)
-    const maxOptions = Math.min(optionCount, 10);
-    for (let i = 1; i <= maxOptions; i++) {
+    for (let i = 1; i <= optionCount; i++) {
         const isRequired = i <= 2;
         block.addInputBlock({
             blockId: "poll_option_" + i,
@@ -35,11 +84,12 @@ export async function createPollModal(
             label: block.newPlainTextObject(t("modal_option_label", lang) + " " + i),
             element: block.newPlainTextInputElement({
                 actionId: "option_" + i,
+                initialValue: draft?.options?.[i - 1] || "",
             }),
         });
     }
 
-    // Knappar for att lagga till/ta bort alternativ
+    // Knappar för att lägga till/ta bort alternativ
     const actionButtons: any[] = [];
     
     if (optionCount < 10) {
@@ -78,7 +128,7 @@ export async function createPollModal(
         label: block.newPlainTextObject(t("modal_vote_type_label", lang)),
         element: block.newStaticSelectElement({
             actionId: "vote_type",
-            initialValue: "single",
+            initialValue: draft?.voteType || "single",
             options: [
                 {
                     text: block.newPlainTextObject(t("modal_vote_type_single", lang)),
@@ -98,7 +148,7 @@ export async function createPollModal(
         label: block.newPlainTextObject(t("modal_time_limit_label", lang)),
         element: block.newStaticSelectElement({
             actionId: "time_limit",
-            initialValue: "0",
+            initialValue: draft?.timeLimit || "0",
             options: [
                 { text: block.newPlainTextObject(t("modal_time_limit_none", lang)), value: "0" },
                 { text: block.newPlainTextObject(t("time_5min", lang)), value: "5" },

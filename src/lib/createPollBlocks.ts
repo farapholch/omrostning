@@ -22,7 +22,8 @@ export function createPollBlocks(
     block: BlockBuilder,
     poll: IPoll,
     showVoteButtons: boolean = true,
-    lang: Language = "en"
+    lang: Language = "en",
+    currentUserId?: string
 ): void {
     let headerText = "### " + poll.question;
     const metaItems: string[] = [];
@@ -32,8 +33,11 @@ export function createPollBlocks(
         const timeStr = expiresDate.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Stockholm" });
         metaItems.push(t("poll_ends_at", lang, { time: timeStr }));
     }
+    if (poll.confidential) {
+        metaItems.push("🔒 " + t("poll_anonymous", lang));
+    }
     if (metaItems.length > 0) {
-        headerText += "  " + metaItems.join(" ");
+        headerText += "  " + metaItems.join(" · ");
     }
 
     block.addSectionBlock({
@@ -72,11 +76,24 @@ export function createPollBlocks(
         poll.options.forEach((option, index) => {
             const voteData = poll.votes[index];
             const votes = voteData?.quantity || 0;
+            const voters = voteData?.voters || [];
+
+            // Check if current user voted for this option
+            const userVoted = currentUserId && voters.some(v => v.id === currentUserId);
+            const yourVoteMarker = userVoted ? " ✓" : "";
+
             let prefix = "";
             if (poll.finished && rankings[index] <= 3) {
                 prefix = getRankEmoji(rankings[index]);
             }
-            resultsText += prefix + "**" + option + "**  " + buildVoteBar(votes, poll.totalVotes) + " (" + votes + ")\n";
+
+            resultsText += prefix + "**" + option + "**" + yourVoteMarker + "  " + buildVoteBar(votes, poll.totalVotes) + " (" + votes + ")\n";
+
+            // Show voter names if not confidential and there are voters
+            if (!poll.confidential && voters.length > 0) {
+                const voterNames = voters.map(v => v.name || v.username).join(", ");
+                resultsText += "_" + voterNames + "_\n";
+            }
         });
         block.addSectionBlock({
             text: block.newMarkdownTextObject(resultsText.trim()),

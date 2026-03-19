@@ -57,7 +57,7 @@ export async function createPollMessage(
     builder.setSender(user);
     
     const block = modify.getCreator().getBlockBuilder();
-    createPollBlocks(block, poll, true, lang);
+    createPollBlocks(block, poll, true, lang, user.id);
     builder.setBlocks(block);
     
     const msgId = await modify.getCreator().finish(builder);

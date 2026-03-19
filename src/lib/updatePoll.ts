@@ -20,6 +20,7 @@ export async function updatePoll(
     user: IUser,
     singleChoice?: boolean,
     timeLimit?: number,
+    confidential?: boolean,
     lang: Language = "en"
 ): Promise<{ success: boolean; message?: string }> {
     const poll = await getPoll(read.getPersistenceReader(), pollId);
@@ -54,6 +55,9 @@ export async function updatePoll(
         } else {
             poll.expiresAt = undefined;
         }
+    }
+    if (confidential !== undefined) {
+        poll.confidential = confidential;
     }
 
     // Hantera alternativ - behåll röster for oförändrade alternativ
@@ -99,7 +103,7 @@ export async function updatePoll(
                     updater.setRoom(room);
                     
                     const block = modify.getCreator().getBlockBuilder();
-                    createPollBlocks(block, poll, true, lang);
+                    createPollBlocks(block, poll, true, lang, user.id);
                     updater.setBlocks(block);
                     
                     await modify.getUpdater().finish(updater);
